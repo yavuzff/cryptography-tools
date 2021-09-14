@@ -21,3 +21,17 @@ def alphabetSub(encrypt,key,text,orig='abcdefghijklmnopqrstuvwxyz'):
             #the encrypted version from the hash table retrieved
 
     return newText
+
+#substitution using a keyword
+def keywordSub(encrypt, keyword, text, alphabet="abcdefghijklmnopqrstuvwxyz"): #optional alphabet can be used
+    #generating key
+    keyword = keyword.lower()
+    key = ''
+
+    seen = {}
+    
+    #adding letters in the keyword to the key
+    for i in keyword+alphabet: #the keyword is added to the start of the key
+        if i not in seen: #ensures no duplicate letters in key
+            key += i
+            seen[i] = True
