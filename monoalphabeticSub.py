@@ -35,3 +35,9 @@ def keywordSub(encrypt, keyword, text, alphabet="abcdefghijklmnopqrstuvwxyz"): #
         if i not in seen: #ensures no duplicate letters in key
             key += i
             seen[i] = True
+    print(key)
+
+    #performing substitutions         
+    newText = alphabetSub(encrypt,key, text) #substitution is performed
+
+    return newText
