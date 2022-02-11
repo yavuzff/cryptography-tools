@@ -1,6 +1,5 @@
 import math         #math.ceil used in transposition
-import numpy        #used for matrix values (can remove this)
-#import secrets      #used for generating random numbers
+#import numpy        #not used anymore as it is not a built in library
 
 alpha = 'abcdefghijklmnopqrstuvwxyz'
 #automatic copying:r.clipboard_clear() , r.clipboard_append('i can has clipboardz?')
@@ -31,8 +30,11 @@ def addSpaces(text, n): #adds spaces at every n blocks
 
 def validateAddSpaces(text, n): #validates the inputs to the addSpaces() function
     
-    if not n.isdigit() or len(text) == 0: #isdigit checks whether a string is an "integer"
-        return False #boolean returned to show whether the inputs are valid
+    if not n.isdigit():
+        return "Error: Please enter an integer for the block size."
+    
+    elif len(text) == 0: #isdigit checks whether a string is an "integer"
+        return "Error: Please enter the text to be manipulated."
     
     else:
         return True 
@@ -71,7 +73,7 @@ def validateAlphabetKey(alphabet,orig='abcdefghijklmnopqrstuvwxyz'):
     
 def keywordSub(encrypt, keyword, text, alphabet="abcdefghijklmnopqrstuvwxyz"): #optional alphabet can be used
 
-#generating key
+    #generating key
     keyword = keyword.lower()
     keyword = keyword.replace(' ','')
     key = ''
@@ -302,7 +304,13 @@ def hill (encrypt, keymatrix, text, alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
         removeLast = True   #flag set to true
 
     
-    matrix = keymatrix % len(alphabet)
+    #matrix = keymatrix % len(alphabet) #needs numpy
+
+    matrix = [[0,0],[0,0]]
+    for i in range (0,2):
+        for j in range (0,2):
+            matrix[i][j] = keymatrix[i][j] % len(alphabet)
+
     divisor = 1
 
     #initially numpy.linalg.inv didnt work as the division resulted in floating point
@@ -316,12 +324,23 @@ def hill (encrypt, keymatrix, text, alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
         
         matrix[0][0],matrix[1][1] = keymatrix[1][1],keymatrix[0][0] #the a and d values are swapped
         matrix[0][1],matrix[1][0] = -matrix[0][1], -matrix[1][0] #the b and c values are negated
-        matrix = matrix % len(alphabet) #matrix converted back to modulo alphabetlength
+
+        #matrix = matrix % len(alphabet) #uses numpy - matrix converted back to modulo alphabetlength
+        for i in range (0,2):
+            for j in range (0,2):
+                matrix[i][j] = matrix[i][j] % len(alphabet)
         
         determinant = keymatrix[0][0] * keymatrix[1][1] - keymatrix[0][1] * keymatrix[1][0]
         determinant = determinant % len(alphabet) #determinant calculated modulo 26
     
-        matrix = matrix*multInverse(determinant,len(alphabet))
+        #matrix = matrix*multInverse(determinant,len(alphabet)) #uses numpy
+        multiplierValue = multInverse(determinant,len(alphabet))
+        
+        for i in range (0,2):
+            for j in range (0,2):
+                matrix[i][j] = matrix[i][j] * multiplierValue
+
+        
         #the inverse matrix is formed by the multiplicative inverse multiplied by the adjugate matrix
 
         
@@ -350,10 +369,16 @@ def hill (encrypt, keymatrix, text, alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
 
         if pair[0] != '' and pair[1]!='': #if there are values for the vector
             
-            vector = numpy.array([[alphabet.index(pair[0])], #vector is formed
-                                  [alphabet.index(pair[1])]]) 
+            #vector = numpy.array([[alphabet.index(pair[0])],[alphabet.index(pair[1])]]) #uses numpy vector is formed
 
-            image = ( matrix @ vector ) #% len(alphabet) #matrix multiplication occurs, to produce image of indices
+            vector = [[alphabet.index(pair[0])],[alphabet.index(pair[1])]]          
+
+            #image = ( matrix @ vector ) #% len(alphabet) #uses numpy matrix multiplication occurs, to produce image of indices
+
+            image = [[0],[0]] #matrix-vector multiplication done manually
+            image[0][0] = matrix[0][0]*vector[0][0] + matrix[0][1]*vector[1][0]
+            image[1][0] = matrix[1][0]*vector[0][0] + matrix[1][1]*vector[1][0]
+            
             new += alphabet[image[0][0]%len(alphabet)] #the letter at image index a is added
 
             for i in mid:
@@ -387,8 +412,8 @@ def validateHillOld(a,b,c,d): #checks if a matrix is invertible
     c = int(c)
     d = int(d)
     
-    matrix = numpy.array([[a,b],
-                          [c,d]]) #this is the form of the matrix
+    matrix = [[a,b],
+              [c,d]] #this is the form of the matrix
 
     determinant = a*d - b*c #the determinant is calculated
 
@@ -407,15 +432,15 @@ def validateHill(a,b,c,d,alphabetLength): #checks if a matrix is valid and inver
     c = int(c)
     d = int(d)
 
-    matrix = numpy.array([[a,b],
-                          [c,d]]) #this is the form of the matrix
+    matrix =[[a,b],
+             [c,d]] #this is the form of the matrix
     determinant = a*d - b*c #the determinant is calculated
     nums = primeFactors(alphabetLength)
     
     #checking if determinant is relatively prime with alphabet length
     for i in nums:
         if determinant % i == 0:
-            return 'Invalid Matrix: The determinant of the matrix must be relatively prime with the alphabet length.\nTry 2 3 1 2'
+            return 'Invalid Matrix: The determinant of the matrix and alphabet length must be co-prime, try 2 3 1 2'
         
     return True
 
@@ -539,6 +564,10 @@ def readRows(table): #reading the table by rows
 def columnarTransposition(encrypt,key,text):
     text = text.lower().replace(' ','') #text and key sanitised
     key = key.lower().replace(' ','')
+    
+    if len(key) > len(text): #if the key is longer, ignore the rest of the key
+        key = key[0:len(text)]
+        
     keylist = [ord(i) for i in key] #key converted to its ascii values
     table = generateTable(key,text) #the transposition table is generated
     
@@ -743,10 +772,8 @@ def cipherPlugin(file,encrypt,key,text):
 
 #Text Analysis:
 
-def validateAnalysedText(text,n='1'):
-    if len(text.replace(' ','')) == 0: #checks if the text is valid
-        return False
-    elif (not n.isdigit()) or int(n)==0: #checks if n is valid
+def validateNgram(n='1'):
+    if (not n.isdigit()) or int(n)==0: #checks if n is valid
         return False
     else:
         return True
@@ -770,7 +797,7 @@ def charFreq(text,onlyAlpha=True,alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'): #find
 
     frequencies = []
     for k,v in letters.items():
-        frequencies.append((v,round(v/total*100,2),k))
+        frequencies.append((v,round(v/total*100,1),k))
         
     frequencies.sort(reverse = True) #sorted list of tuples for each letter
 
@@ -790,7 +817,7 @@ english = [float(x) for x in freq]
 def ngramCounter(text,n,overlap=True): #n is block size, overlap boolean stores whether blocks overlap with each other
 
     ngrams = {} #dictionary stores the number of appearances of each ngram
-    text = text.upper().replace(' ','') #text is sanitised, spaces are ignored
+    text = text.upper().replace(' ','').replace('\n','').replace('\r','').replace('\t','')#text is sanitised, spaces are ignored
     if not overlap:
         blocks = addSpaces(text,n).split() #text is split into blocks of n
 
@@ -916,10 +943,7 @@ if __name__ == "__main__":
         if choice != 15:
             choice2 = input("Would you like to continue (c) or quit (q)?\n> ")
             if choice2.lower().strip()[0] != 'q':
-                replay = True
-            
-
-        
+                replay = True        
 
 
 
