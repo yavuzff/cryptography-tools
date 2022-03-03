@@ -77,7 +77,7 @@ def plotEnglishFreq(xvalues):
 alphabet = list('abcdefghijklmnopqrstuvwxyz')
 onlyLetters = True #do you want the plot to have only letters are all char?
 percentage = True #viewing frequencies as percentage or as absolute count
-single = True #viewing for a single text or keeping on inputting text (multiple text)
+single = False #viewing for a single text or keeping on inputting text (multiple text)
 file = False #enter file name
 
 while True:
